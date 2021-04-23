@@ -1,0 +1,2030 @@
+commit 6e2e2d9eb226645e9a9b2502a9fb353fc3e7f19d
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 31 19:12:08 2021 +0100
+
+    Version v1.55.0
+
+commit 20e15e52a9d79c5ceb3b9008ca7bb16bc13c0853
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 31 14:48:02 2021 +0100
+
+    vfs: fix Create causing windows explorer to truncate files on CTRL-C CTRL-V
+    
+    Before this fix, doing CTRL-C and CTRL-V on a file in Windows explorer
+    caused the **source** and the the destination to be truncated to 0.
+    
+    This is because Windows opens the source file with Create with flags
+    `O_RDWR|O_CREATE|O_EXCL` but doesn't write to it - it only reads from
+    it. Rclone was taking the call to Create as a signal to always make a
+    new file, but this is incorrect.
+    
+    This fix reads an existing file from the directory if it exists when
+    Create is called rather than always creating a new one. This fixes the
+    problem.
+    
+    Fixes #5181
+
+commit d0f8b4f479856ac4ea23c60527514d5bade6a4ff
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Mar 30 17:47:44 2021 +0100
+
+    fs/cache: fix recreation of backends after they have expired
+    
+    Before this change, on the first attempt to create a backend we used a
+    non-canonicalized string. When the backend expired the second attempt
+    to create it would use the canonicalized string (because it was in the
+    remap cache) which would fail because it was now `name{XXXX}:`
+    
+    This change makes sure that whenever we create a backend we always use
+    the non-canonicalized string.
+    
+    See: https://forum.rclone.org/t/connection-string-inconsistencies-on-beta/23171
+
+commit 58d82a5c7302e09831060422a8a53ddaa5ab65c1
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Mar 30 16:12:46 2021 +0100
+
+    rc: allow fs= params to be a JSON blob
+
+commit c0c74003f2d77058548d5f3320e9f25cda9bffa0
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Mar 29 17:18:49 2021 +0100
+
+    fs/cache: add --fs-cache-expire-duration to control the fs cache
+    
+    This commit makes the previously statically configured fs cache configurable.
+    
+    It introduces two parameters `--fs-cache-expire-duration` and
+    `--fs-cache-expire-interval` to control the caching of the items.
+    
+    It also adds new interfaces to lib/cache to set these.
+
+commit 60bc7a079a28391917ad86be16e95d95d4c31835
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Mar 30 09:42:15 2021 +0100
+
+    rc: factor rc.Error out of rcserver for re-use in librclone #4891
+
+commit 20c5ca08fbf4222178f01ccd47dca8d04c237be8
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Mar 29 23:12:53 2021 +0100
+
+    test_all: fix crash when using -clean
+
+commit fc57648b7533571a8c5965ddce58efa5a0e76688
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Thu Mar 25 15:35:08 2021 +0000
+
+    lib/rest: fix multipart uploads stopping on context cancel
+    
+    Before this change when the context was cancelled (due to
+    --max-duration for example) this could deadlock when uploading
+    multipart uploads.
+    
+    This change fixes the problem by introducing another go routine to
+    monitor the context and close the pipe with an error when the context
+    errors.
+
+commit 8c5c91e68fff574f2e821e0bf2c70abdf2ffe185
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Thu Mar 25 15:53:16 2021 +0000
+
+    lib/readers: add NewContextReader to error on context errors
+
+commit 9dd39e85246d1922f3628c9b34e505c85888540f
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Mar 29 19:09:36 2021 +0100
+
+    Add x0b to contributors
+
+commit 9c9186183d5f28891fb30899448cf9a836db8dbc
+Author: albertony <12441419+albertony@users.noreply.github.com>
+Date:   Sat Mar 27 17:26:01 2021 +0100
+
+    docs: add short description of configuration file format (#5142)
+    
+    Fixes #572
+
+commit 2ccf416e8343c5d318748ef4912502e70168c3ea
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Thu Mar 25 17:24:46 2021 +0000
+
+    build: add version to android builds and fix upload
+
+commit 5577c7b760df7ab7c1eb906ef81266e416ce832a
+Author: x0b <x0bdev@gmail.com>
+Date:   Wed Mar 17 18:00:16 2021 +0100
+
+    build: replace xgo with NDK for Android builds
+
+commit f6dbb98a1dbf818caa0b8d427db33b529d88b932
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Thu Mar 25 08:59:39 2021 +0000
+
+    cmount: update cgofuse to the latest version to bring in macfuse 4 fix
+
+commit d042f3194f4f2cda68c090ac7855aa368e481977
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 24 17:04:05 2021 +0000
+
+    b2: fix html files downloaded via cloudflare
+    
+    When reading files from B2 via cloudflare using --b2-download-url
+    cloudflare strips the Content-Length headers (presumably so it can
+    inject stuff into the body).
+    
+    This caused rclone to think the file was corrupted as the length
+    didn't match.
+    
+    The patch uses the old length read from the listing if there is no
+    Content-Length.
+    
+    See: https://forum.rclone.org/t/b2-cloudflare-error-directory-not-found/23026
+
+commit 524cd327e6c350bdd25741fbfc7eecd2ded9264e
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 24 14:22:27 2021 +0000
+
+    build: update notes on how to build the release manually with docker
+
+commit b8c1cf7451d376ff4a3e2ebdf085ffd5d0a55b87
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Mar 22 17:17:08 2021 +0000
+
+    union: fix initialisation broken in refactor - fixes #5139
+    
+    This commit broke the initialisation of the union backend
+    
+    f17d7c00126ed567 union: refactor to use fspath.SplitFs instead of fs.ParseRemote #4996
+    
+    This patch fixes it.
+
+commit 0fa68bda029f2f79f1d115da90fb7d67302ad3ad
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Mar 22 16:25:19 2021 +0000
+
+    fspath: fix path parsing on Windows - fixes #5143
+    
+    In this commit
+    
+    8a46dd1b5761b375 fspath: Implement a connection string parser #4996
+    
+    The parsing code was re-written. This didn't quite work as before,
+    failing to adjust local paths on Windows when it should.
+    
+    This patch fixes the problem and implements tests for it.
+
+commit 1378bfee63d482d353d454b63636d686f346ae7e
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Mar 23 16:07:24 2021 +0000
+
+    box: fix transfers getting stuck on token expiry after API change
+    
+    Box recently changed their API, changing the case of returned API items
+    
+    > On May 10th, 2021, as part of our continued infrastructure upgrade,
+    > Box's API response headers will standardize to return in a case
+    > insensitive manner, in line with industry best practices and our API
+    > documentation. Applications that are using these headers, such as
+    > "location" and "retry-after", will need to verify that their
+    > applications are checking for these headers in a case-insensitive
+    > fashion.
+    
+    Rclone was reading the raw headers from the `http.Header` and not
+    using the `Get` accessor method which meant that it was sensitive to
+    case changes.
+    
+    This fixes the problem by using the `Get` accessor method.
+    
+    See: https://forum.rclone.org/t/box-backend-incompatible-with-box-api-changes-being-deployed/22972
+
+commit d6870473a15cc62d7530527f0199ebd1d4688884
+Author: nguyenhuuluan434 <nguyenhuuluan434@gmail.com>
+Date:   Tue Mar 2 15:58:14 2021 +0700
+
+    swift: implement copying large objects
+
+commit 12cd3226432a068f5be584880a8c68ee5991a7e0
+Author: albertony <12441419+albertony@users.noreply.github.com>
+Date:   Tue Mar 23 18:36:51 2021 +0100
+
+    crypt: log hash ok on upload
+
+commit 1406b6c3c9e21f59cba027101bfb2e014a21736e
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Tue Mar 23 01:09:48 2021 +0300
+
+    install.sh: fail on download errors
+    
+    This patch makes install.sh always run curl with flag "-f"
+    so it fails on download errors.
+
+commit 088a83872d34bff6aa857665d566800fe40ea50b
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Sat Mar 20 15:58:59 2021 +0300
+
+    install.sh: fix some shellcheck warnings
+
+commit cb460928832c1c99f7a8776d227b1409db1a233a
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Mar 22 20:45:07 2021 +0000
+
+    lib/atexit: unregister interrupt handler once it has fired so users can interrupt again
+
+commit a2cd5d8fa303d461db5d713dc68b32b6039d0728
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Mar 20 14:28:50 2021 +0000
+
+    lib/atexit: fix deadlock calling Finalise while Run is running
+
+commit 1fe2460e38b5aa6bec7134075f169fbb24212e35
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Sun Mar 21 15:14:10 2021 +0300
+
+    selfupdate: abort if updating would discard fuse semantics
+
+commit ef5c212f9bf84d8b173707e03ea55bdc0ef12fac
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Sun Mar 21 15:13:09 2021 +0300
+
+    version: show build tags and type of executable
+    
+    This patch modifies the output of `rclone version`.
+    The `os/arch` line is split into `os/type` and `os/arch`.
+    The `go version` line is now tagged as `go/version` for consistency.
+    
+    Additionally the `go/linking` line tells whether the rclone
+    was linked as a static or dynamic executable.
+    The new `go/tags` line shows a space separated list of build tags.
+    
+    The info about linking and build tags is also added to the output
+    of the `core/version` RC endpoint.
+
+commit 268a7ff7b87d9d85e224492b575a6e847c3dd769
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Mar 15 15:50:04 2021 +0000
+
+    rc: add a full set of stats to core/stats
+    
+    This patch adds the missing stats to the output of core/stats
+    
+    - totalChecks
+    - totalTransfers
+    - totalBytes
+    - eta
+    
+    This now includes enough information to rebuild the normal stats
+    output from rclone including percentage completions and ETAs.
+    
+    Fixes #5116
+
+commit b47d6001a9126ce75f590496609d452e785ab4ce
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 17 15:01:35 2021 +0000
+
+    vfs: fix directory renaming by renaming dirs cached in memory
+    
+    Before this change, if a directory was renamed and it or any children
+    had virtual entries in it they weren't flushed.
+    
+    The consequence of this was that the directory path got out sync with
+    the actual position of the directory in the tree, leading to listings
+    of the old directory rather than the new one.
+    
+    The fix renames any directories remaining after the ForgetAll to have
+    the correct path which fixes the problem.
+    
+    See: https://forum.rclone.org/t/after-a-directory-renmane-using-mv-files-are-not-visible-any-longer/22797
+
+commit a4c4ddf052c54f32234e224c8590b207cf79caa7
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 17 09:48:25 2021 +0000
+
+    vfs: rename files in cache and cancel uploads on directory rename
+    
+    Before this change rclone did not cancel an uploads or rename the
+    cached files in the directory cache when a directory was renamed.
+    
+    This caused issues with uploads arriving in the wrong place on bucket
+    based file systems.
+    
+    See: https://forum.rclone.org/t/after-a-directory-renmane-using-mv-files-are-not-visible-any-longer/22797
+
+commit 4cc2a7f34293f8435bb898a40135536d6ddea850
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Mar 16 13:23:36 2021 +0000
+
+    mount: fix caching of old directories after renaming them
+    
+    It was discovered `rclone mount` (but not `rclone cmount`) cached
+    directories after rename which it shouldn't have done.
+    
+    This caused IO errors when trying to access files in renamed
+    directories on bucket based file systems.
+    
+    This turned out to be the kernel caching the directories as basil/fuse
+    sets their expiry time to 60s for some reason.
+    
+    This fix invalidates the relevant kernel cache entries in the for the
+    directories which fixes the problem.
+    
+    Fixes: #4977
+    See: https://forum.rclone.org/t/after-a-directory-renmane-using-mv-files-are-not-visible-any-longer/22797
+
+commit c72d2c67edfcd25839bf392f7fd14be94a46fea8
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Mar 16 11:19:18 2021 +0000
+
+    vfs: add debug dump function to dump the state of the VFS cache
+
+commit 9deab5a563eee86d35fa6ef9d9e9c2ce15fe5fee
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Sep 8 11:34:25 2020 +0100
+
+    dropbox: raise priority of rate limited message to INFO to make it more noticeable
+    
+    If you exceed rate limits, dropbox tells you to wait for 300 seconds -
+    this is rather a long time for the user to be waiting for rclone to
+    finish, so emit a NOTICE level log instead of a DEBUG.
+
+commit da5b0cb6114c86b4cb5ba20b734d0a9d555367db
+Author: buengese <buengese@protonmail.com>
+Date:   Sun Mar 21 01:26:15 2021 +0100
+
+    zoho: add forgotten setupRegion() to NewFs
+    - this finally fixes regions other than eu
+
+commit 0187bc494a222f8f64660a9da3a7b4820461648b
+Author: buengese <buengese@protonmail.com>
+Date:   Thu Mar 11 16:04:29 2021 +0100
+
+    zoho: replace client id
+
+commit 2bdbf00fa35f7ef5393027bae23840bf093b45e8
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Thu Mar 18 23:11:16 2021 +0300
+
+    selfupdate: add instructions on reverting the update (#5141)
+
+commit 9ee3ad70e9001afb8e9bfbed12ca8c1d9a1501ff
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Thu Mar 18 08:00:08 2021 +0000
+
+    sftp: fix SetModTime stat failed: object not found with --sftp-set-modtime=false
+    
+    Some sftp servers don't allow the user to access the file after upload.
+    
+    In this case the error message indicates that using
+    --sftp-set-modtime=false would fix the problem. However it doesn't
+    because SetModTime does a stat call which can't be disabled.
+    
+        Update SetModTime failed: SetModTime stat failed: object not found
+    
+    After upload this patch checks for an `object not found` error if
+    set_modtime == false and ignores it, returning the expected size of
+    the object instead.
+    
+    It also makes SetModTime do nothing if set_modtime = false
+    
+    https://forum.rclone.org/t/sftp-update-setmodtime-failed/22873
+
+commit ce182adf464e8dc99c20ad382ad52f80acebb799
+Author: albertony <12441419+albertony@users.noreply.github.com>
+Date:   Thu Mar 18 10:04:59 2021 +0100
+
+    copyurl: add option to print resulting auto-filename (#5095)
+    
+    Fixes #5094
+
+commit 97fc3b9046b531454abc6e84199a25cc56c37250
+Author: albertony <12441419+albertony@users.noreply.github.com>
+Date:   Thu Mar 18 10:02:30 2021 +0100
+
+    rc: avoid +Inf value for speed in core/stats (#5134)
+    
+    Fixes #5132
+
+commit e59acd16c6ba6e7fc57cd774dde5a74196028b53
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 17 16:45:21 2021 +0000
+
+    drive: remove duplicated Context(ctx) calls
+    
+    These were added by accident in
+    
+    d9959b027116b441 drive: pass context on to drive SDK - this will help with cancellation
+    
+    Which added lots of new Context() calls but duplicated some existing
+    ones.
+
+commit acfd7e24033964193b25c2263c46a8119303ffc2
+Author: albertony <12441419+albertony@users.noreply.github.com>
+Date:   Wed Mar 17 14:34:46 2021 +0100
+
+    docs: add note about limitation with pattern-list to filtering docs (#5118)
+    
+    Fixes #5112
+
+commit f47893873dc21ddde3d69d5d34c96babf62d2290
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Feb 19 13:13:54 2021 +0000
+
+    fs: fix failed token refresh on mounts created via the rc
+    
+    Users have noticed that backends created via the rc have been failing
+    to refresh their tokens with this error:
+    
+        Token refresh failed try 1/5: context canceled
+    
+    This is because the rc server cancels the context used to make the
+    backend when the request has finished. This same context is used to
+    refresh the token and the oauth library checks to see if the context
+    has been cancelled.
+    
+    This patch creates a new context for the cached backends and copies
+    the global and filter config into the new context.
+    
+    See: https://forum.rclone.org/t/google-drive-token-refresh-failed/22283
+
+commit b9a015e5b968cb3dd053f8c622aa2229a80eab26
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Jan 19 18:21:08 2021 +0000
+
+    s3: fix --s3-profile which wasn't working - fixes #4757
+
+commit d72d9e591a303d1c812b66ef53bff19aea941635
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Mar 3 11:07:03 2020 +0000
+
+    ftp: retry connections and logins on 421 errors #3984
+    
+    Before this we just failed if the ftp connection or login failed.
+    
+    This change adds a pacer just for the ftp connect and retries if the
+    connection failed to Dial or the login returns a 421 error.
+
+commit df451e1e702a852cbf476161ab8d25e19399a83f
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 25 16:51:18 2020 +0000
+
+    ftp: add --ftp-close-timeout flag for use with awkward ftp servers #3984
+
+commit d9959b027116b441a32782e790ddda639e0f236c
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Mar 16 15:53:35 2021 +0000
+
+    drive: pass context on to drive SDK - this will help with cancellation
+
+commit f2c0f82fc6f5390cc30db612ce457ece45286f15
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Mar 16 15:50:02 2021 +0000
+
+    backends: Add context checking to remaining backends #4504
+    
+    This is a follow up to 4013bc4a4cd768e2 which missed some backends.
+    
+    It adds a ctx parameter to shouldRetry and checks it.
+
+commit f76c6cc8931c7574a21b5ff7d03ae4ab82f59dcb
+Author: albertony <12441419+albertony@users.noreply.github.com>
+Date:   Tue Mar 16 12:36:57 2021 +0100
+
+    docs: describe how to bypass loading of config file
+    Fixes #5125
+
+commit 5e95877840ce558f2b1e2b7438e8eeaf94e569a1
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sun Mar 14 12:17:29 2021 +0000
+
+    vfs: fix modtime set if --vfs-cache-mode writes/full and no write
+    
+    When using --vfs-cache-mode writes or full if a file was opened for
+    write intent, the modtime was set and the file was closed without
+    being modified the modtime would never be written back to storage.
+    
+    The sequence of events
+    
+    - app opens file with write intent
+    - app does set modtime
+    - rclone sets the modtime on the cache file, but not the remote file
+      because it is open for write and can't be set yet
+    - app closes the file without changing it
+    - rclone doesn't upload the file because the file wasn't changed so
+      the modtime doesn't get updated
+    
+    This fixes the problem by making sure any unapplied modtime changes
+    are applied even if the file is not modified when being closed.
+    
+    Fixes #4795
+
+commit 8b491f7f3d9f987e0cc4966a80edac4790c3f62a
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Mar 12 16:52:58 2021 +0000
+
+    vfs: fix modtimes changing by fractional seconds after upload #4763
+    
+    Before this change, rclone would return the modification times of the
+    cache file or the pending modtime which would be more accurate than
+    the modtime that the backend was capable of.
+    
+    This meant that the modtime would be change slightly when the item was
+    actually uploaded.
+    
+    For example modification times on Google Drive would be rounded to the
+    nearest millisecond.
+    
+    This fixes the VFS layer to always return modtimes directly from an
+    object stored on the remote, or rounded to the precision that the
+    remote is capable of.
+
+commit aea8776a4368ee8ab02b436717d219d0e868d701
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Mar 12 16:15:28 2021 +0000
+
+    vfs: fix modtimes not updating when writing via cache - fixes #4763
+    
+    This reads modtime from a dirty cache item if it exists. This mirrors
+    the way reading the size works.
+    
+    This fixes the mod time not updating when the file is written, only
+    when the writeback completes.
+    
+    See: https://forum.rclone.org/t/rclone-mount-and-changing-timestamps-after-writes/22629
+
+commit c387eb8c09b01bb8cdb47d92a789f6ff673a11d5
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Oct 9 16:11:11 2020 +0100
+
+    vfs: don't set modification time if it was already correct
+    
+    Before this change, rclone would set the modification time of an
+    object after it had been uploaded. However with --vfs-cache-mode
+    writes and above, the modification time of the object is already
+    correct as the cache backing file gets set with the correct
+    modification time before upload.
+    
+    Setting the modification time causes another version to be created on
+    backends such as S3 so it should be avoided if possible.
+    
+    This change checks to see if the modification time needs changing and
+    only sets it if necessary.
+    
+    See: https://forum.rclone.org/t/produce-2-versions-when-overwrite-an-object-in-min-io/19634
+
+commit a12b2746b4fdd850bb686a5c980c14e0d2024ff3
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 10 14:10:03 2021 +0000
+
+    fs: make sure backends with additional config have a different name #4996
+    
+    Backends for which additional config is detected (in the config string
+    or on the command line or as environment variables) will gain a suffix
+    `{XXXXX}` where `XXXX` is a base64 encoded md5hash of the config
+    string.
+    
+    This fixes backend caching with config string remotes.
+    
+    This much requested feature now works properly:
+    
+        rclone copy -vv drive,shared_with_me:file.txt drive:
+
+commit 3dbef2b2fda5d896ca6f8cd17893864b9f25f7ca
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 10 14:09:30 2021 +0000
+
+    fs: make sure we don't save on the fly remote config to the config file #4996
+
+commit f111e0eaf810beb7d404ec3df271407f40ef2d4a
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 10 12:17:08 2021 +0000
+
+    fs: enable configmap to be able to tell values set vs config file values #4996
+    
+    This adds AddOverrideGetter and GetOverride methods to config map and
+    uses them in fs.ConfigMap.
+    
+    This enables us to tell which values have been set and which are just
+    read from the config file or at their defaults.
+    
+    This also deletes the unused AddGetters method in configmap.
+
+commit 96207f342c311dbcc0c2bb384cfa6b2815be53f3
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 10 11:58:23 2021 +0000
+
+    configmap: add consistent String() method to configmap.Simple #4996
+
+commit e25ac4dcf077849e0fafaaef0b1dd4c3bef634df
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 10 14:40:36 2021 +0000
+
+    fs: Use connection string config as highest priority config #4996
+
+commit 28f6efe95551b8da67542bd980593df07ca9b790
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 10 14:37:57 2021 +0000
+
+    cmd: refactor to use fspath.SplitFs instead of fs.ParseRemote #4996
+
+commit f17d7c00126ed567e0fbf2710f2726cf92c26dfe
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 10 14:32:44 2021 +0000
+
+    union: refactor to use fspath.SplitFs instead of fs.ParseRemote #4996
+
+commit 3761cf68b454e48fd184e014c2785c9a1027011d
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 10 14:32:01 2021 +0000
+
+    chunker: refactor to use fspath.SplitFs instead of fspath.Parse #4996
+
+commit 71554c13719f2fb2a0c3d6ddc6d44f8aab9cc2bd
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 10 14:26:30 2021 +0000
+
+    fspath: factor Split into SplitFs and Split #4996
+
+commit 8a46dd1b5761b375c72382bb7a01de6ae8ad72a8
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 9 09:30:40 2021 +0000
+
+    fspath: Implement a connection string parser #4996
+    
+    This is implemented as a state machine parser so it can emit sensible
+    error messages.
+    
+    It does not use the connection strings elsewhere in rclone yet - see
+    subsequent commits.
+    
+    An optional fuzzer is implemented for the Parse function.
+
+commit 3b2185709761de158c3d59ea44a725c7bed97cad
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Nov 30 11:53:11 2020 +0000
+
+    config: clear fs cache of stale entries when altering config - fixes #4811
+    
+    Before this change if a config was altered via the rc then when a new
+    backend was created from that config, if there was a backend already
+    running from the old config in the cache then it would be used instead
+    of creating a new backend with the new config, thus leading to
+    confusion.
+    
+    This change flushes the fs cache of any backends based off a config
+    when that config is changed is over the rc.
+
+commit a10fbf16ea3296eccad201f642a861b8839730d3
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Nov 30 11:52:25 2020 +0000
+
+    fs/cache: add ClearConfig method to clear all remotes based on Config #4811
+
+commit f4750928eee3641743a61ba01ca5403688226a58
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Nov 30 11:46:06 2020 +0000
+
+    lib/cache: add Delete and DeletePrefix methods #4811
+
+commit 657be2ace529e822a44303f598045eeaecdddf31
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sun Nov 29 11:41:50 2020 +0000
+
+    rc: add fscache/clear and fscache/entries to control the fs cache #4811
+
+commit feaaca4987324822bd6d6b6b0756481e7f32b8a0
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sun Nov 29 11:25:51 2020 +0000
+
+    fs/cache: add Entries() for finding how many entries in the fscache #4811
+
+commit ebd9462ea6037003f218c0a5efb17e079cff4c5f
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Jan 15 12:18:28 2021 +0000
+
+    union: fix union attempting to update files on a read only file system
+    
+    Before this change, when using an all create method with one of the
+    upstreams being read only, if there was an existing file on the read
+    only remote, it was impossible to update it.
+    
+    This change detects that situation and creates the file on a
+    read/write upstream. This file will shadow the file on the read/only
+    upstream. If it is deleted the read only upstream file will be visible
+    again.
+    
+    Fixes #4929
+
+commit 6b9e4f939ddd6c60ebeaf92cc83b184e24c2252c
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Feb 8 11:59:01 2021 +0000
+
+    union: fix crash when using epff policy - fixes #5000
+    
+    Before this fix using the epff policy could double close a channel.
+    
+    The fix refactors the code to make that impossible and cancels any
+    running queries when the first query is found.
+
+commit 687a3b1832ab1c8e0c36c7f9e99fd23d45b60e32
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 17 20:25:38 2021 +0000
+
+    vfs: fix data race discovered by the race detector
+    
+    This fixes a place where we read from item.o without the item.mu held.
+
+commit 25d5ed763cfeee07c5787f00896de094d505a742
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 17 20:21:09 2021 +0000
+
+    fs: make sync and operations tests use context instead of global variables
+
+commit 5e038a5e1e4efb602b14af652cab1d2df5c77d21
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 17 18:11:27 2021 +0000
+
+    lib/file: retry preallocate on EINTR
+    
+    Before this change, sometimes preallocate failed with EINTR which
+    rclone ignored.
+    
+    Retrying the syscall is the correct thing to do and seems to make
+    preallocate 100% reliable.
+
+commit 4b4e531846787cb7e84159258eae70f836b57a74
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 17 17:28:44 2021 +0000
+
+    build: add missing BUILD_FLAGS to compile_only to speed up other_os build
+    
+    Before this we were building all architectures unnecessarily in the
+    compile_all step for the other_os build. There are built elsewhere so
+    we don't need to build them here too.
+    
+    This fix adds the missing BUILD_FLAGS which excludes the other builds
+    and should speed up the workflow.
+
+commit 89e8fb48180cd01c4107fe91946920cdb4bb8ee6
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 17 13:06:24 2021 +0000
+
+    local: don't ignore preallocate disk full errors
+    
+    See: https://forum.rclone.org/t/input-output-error-copying-to-cifs-mount-disk-space-filled/22163
+
+commit b9bf91c510118f88826960a265cc738ec9b5151c
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 16 16:36:27 2021 +0000
+
+    lib/file: don't run preallocate concurrently
+    
+    This seems to cause file systems to get the amount of free space
+    wrong.
+
+commit 40b58d59ad59e34c1393dcc6a8f122e4458932f9
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 17 13:05:15 2021 +0000
+
+    lib/file: make pre-allocate detect disk full errors and return them
+
+commit 4fbb50422ceec22eb1575d9544f0603de4bc635f
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Thu Sep 10 20:41:26 2020 +0100
+
+    drive: don't stop server side copy if couldn't read description
+    
+    Before this change we would error out of a server side copy if we
+    couldn't read the description for a google doc.
+    
+    This patch just logs an ERROR message and carries on.
+    
+    See: https://forum.rclone.org/t/rclone-google-drive-to-google-drive-migration-for-multiple-users/19024/3
+
+commit 8d847a4e942727ddc589dfb03d1bec624c45b0ff
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Jan 25 17:03:57 2021 +0000
+
+    lib/atexit: fix occasional failure to unmount with CTRL-C #4957
+    
+    Before this change CTRL-C could come in to exit rclone which would
+    start the atexit actions running. The Fuse unmount then signals rclone
+    to exit which wasn't waiting for the already running atexit actions to
+    complete.
+    
+    This change makes sure that if the atexit actions are started they
+    should be completed.
+
+commit e3e08a48cb702e0f655d13124a554ae128db6335
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Mar 15 19:21:51 2021 +0000
+
+    Add Manish Kumar to contributors
+
+commit ff6868900d5a2adcbf9ead9acf9e4285edc245c5
+Author: Manish Kumar <krmanish260@gmail.com>
+Date:   Mon Mar 15 22:48:47 2021 +0530
+
+    azureblob: add container public access level support. Fixes #5045
+
+commit aab076029fb7d1c4e0e3be8017c399adf7d2c233
+Author: albertony <12441419+albertony@users.noreply.github.com>
+Date:   Sun Mar 14 22:14:44 2021 +0100
+
+    local: make nounc advanced option except on windows
+
+commit 294f090361dbcfec69769bffb0ffb902e301d2df
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 16 17:54:13 2021 +0000
+
+    fs: make sure --low-level-retries, --checkers, --transfers are > 0
+
+commit 301e1ad98223a01a230cd73fa9b84a06dbbd556e
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 16 17:53:44 2021 +0000
+
+    fs: fix crash when --low-level-retries=0 - fixes #5024
+
+commit 3cf6ea848b03e95228aa0b160eb153851b8ab43f
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Mar 13 14:54:26 2021 +0000
+
+    config: remove log.Fatal and replace with error passing where possible
+
+commit bb0b6432ae5d74a741815a8cc1f0cf2d46e3dddb
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Mar 13 12:36:38 2021 +0000
+
+    config: --config "" or "/notfound" for in memory config only #4996
+    
+    If `--config` is set to empty string or the special value `/notfound`
+    then rclone will keep the config file in memory only.
+
+commit 46078d391fda82bc3099668049cd54cf7141f4d9
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 10 14:13:01 2021 +0000
+
+    config: make config file reads reload the config file if needed #4996
+    
+    Before this change the config file needed to be explicitly reloaded.
+    This coupled the config file implementation with the backends
+    needlessly.
+    
+    This change stats the config file to see if it needs to be reloaded on
+    every config file operation.
+    
+    This allows us to remove calls to
+    
+    - config.SaveConfig
+    - config.GetFresh
+    
+    Which now makes the the only needed interface to the config file be
+    that provided by configmap.Map when rclone is not being configured.
+    
+    This also adds tests for configfile
+
+commit 849bf205984f759ce5b0071fcd346014f12f0d9d
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Mar 13 17:27:55 2021 +0000
+
+    build: disable IOS builds for the time being - see #5124
+
+commit e91f2e342adf7259f65c1a784fd49c40538679cd
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Sat Mar 13 23:02:40 2021 +0300
+
+    docs: mention rclone selfupdate in quickstart (#5122)
+
+commit 713f8f357dc5eb512f736ad97cb092dfbd1dbfe9
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sun Feb 28 11:36:56 2021 +0000
+
+    sftp: fix "file not found" errors for read once servers - fixes #5077
+    
+    It introduces a new flag --sftp-disable-concurrent-reads to stop the
+    problematic behaviour in the SFTP library for read-once servers.
+    
+    This upgrades the sftp library to v1.13.0 which has the fix.
+
+commit 83368998bee37affbdb108d3780988e0f45cb00a
+Author: Evan Harris <eharris@puremagic.com>
+Date:   Thu Jul 23 04:22:19 2020 -0500
+
+    docs: Updated sync and dedupe command docs #4429
+
+commit 4013bc4a4cd768e219d5a1e281daf8126d549474
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Thu Mar 11 14:44:01 2021 +0000
+
+    Fix excessive retries missing --max-duration timeout - fixes #4504
+    
+    This change checks the context whenever rclone might retry, and
+    doesn't retry if the current context has an error.
+    
+    This fixes the pathological behaviour of `--max-duration` refusing to
+    exit because all the context deadline exceeded errors were being
+    retried.
+    
+    This unfortunately meant changing the shouldRetry logic in every
+    backend and doing a lot of context propagation.
+    
+    See: https://forum.rclone.org/t/add-flag-to-exit-immediately-when-max-duration-reached/22723
+
+commit 32925dae1f02621f561ad48d26091f47f8f22138
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Mar 13 09:25:35 2021 +0000
+
+    Add Lucas Messenger to contributors
+
+commit 6cc70997baf7e7735b30e0ab10fb1f459fa74502
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Mar 13 09:25:35 2021 +0000
+
+    Add Naveen Honest Raj to contributors
+
+commit d260e3824e15702040db2cecaa49ced852d07d6d
+Author: buengese <buengese@protonmail.com>
+Date:   Sun Mar 7 14:12:01 2021 +0100
+
+    docs: cleanup optional feature table
+
+commit a5bd26395ee3ca8b9d80f77b412dae550b36898d
+Author: Lucas Messenger <lmesseng@cisco.com>
+Date:   Thu Mar 11 11:50:59 2021 -0500
+
+    hdfs: fix permissions for when directory is created
+
+commit 6fa74340a0964af2704f8b874e09c541e15e4e8d
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Thu Mar 11 22:39:30 2021 +0300
+
+    cmd: rclone selfupdate (#5080)
+    
+    Implements self-update command
+    Fixes #548
+    Fixes #5076
+
+commit 4d8ef7bca7ef498642146ef93b2037464b7b830d
+Author: Saksham Khanna <sakshamkhanna@outlook.com>
+Date:   Thu Mar 11 23:10:29 2021 +0530
+
+    cmd/dedupe: make largest directory primary to minimize data moved (#3648)
+    
+    This change makes dedupe recursively count elements in same-named directories
+    and make the largest one primary. This allows to minimize the amount of data
+    moved (or at least the amount of API calls) when dedupe merges them.
+    It also adds a new fs.Object interface `ParentIDer` with function `ParentID` and
+    implements it for the drive and opendrive backends. This function returns
+    parent directory ID for objects on filesystems that allow same-named dirs.
+    We use it to correctly count sizes of same-named directories.
+    
+    Fixes #2568
+    
+    Co-authored-by: Ivan Andreev <ivandeex@gmail.com>
+
+commit 6a9ae3201232f5761fc7603ceb158c29637b2454
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Thu Mar 11 16:20:31 2021 +0000
+
+    config: split up main file more and move tests into correct packages
+    
+    This splits config.go into ui.go for the user interface functions and
+    authorize.go for the implementation of `rclone authorize`.
+    
+    It also moves the tests into the correct places (including one from
+    obscure which was in the wrong place).
+
+commit a7fd65bf2d36ef3b63834d6e936ef63b2042de42
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 10 20:16:17 2021 +0000
+
+    config: move account initialisation out into accounting
+    
+    Before this change the initialisation for the accounting package was
+    done in the config package for some strange historical reason.
+
+commit 1fed2d910c674ca35310961e3e1a4ce629a902b1
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Mar 10 15:40:34 2021 +0000
+
+    config: make config file system pluggable
+    
+    If you are using rclone a library you can decide to use the rclone
+    config file system or not by calling
+    
+        configfile.LoadConfig(ctx)
+    
+    If you don't you will need to set `config.Data` to an implementation
+    of `config.Storage`.
+    
+    Other changes
+    - change interface of config.FileGet to remove unused default
+    - remove MustValue from config.Storage interface
+    - change GetValue to return string or bool like elsewhere in rclone
+    - implement a default config file system which panics with helpful error
+    - implement getWithDefault to replace the removed MustValue
+    - don't embed goconfig.ConfigFile so we can change the methods
+
+commit c95b58047825b7b35dd5f0973859c1fb7824d69f
+Author: Fionera <fionera@fionera.de>
+Date:   Sat Nov 7 22:05:58 2020 +0100
+
+    config: Wrap config library in an interface
+
+commit 2be310cd6ea9a493bdc9e8971dd4743022974be8
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Mar 8 11:07:48 2021 +0000
+
+    build: fix dependencies for docs build
+
+commit 02a5d350f932d9c51ca83986cf09aca026bdff3d
+Author: Naveen Honest Raj <naveendurai19@gmail.com>
+Date:   Tue Mar 2 02:09:33 2021 -0800
+
+    rcd: Added systemd notification during the 'rclone rcd' command call. This also fixes #5073.
+    
+    Signed-off-by: Naveen Honest Raj <naveendurai19@gmail.com>
+
+commit 18cd2064ec3b1a41ecd3f1bda66e1bdbd06da1ad
+Author: albertony <12441419+albertony@users.noreply.github.com>
+Date:   Thu Feb 11 09:09:48 2021 +0100
+
+    mount: docs: add note about volume path syntax on windows
+
+commit 59ed70ca91cdefea368c90722322a7b16f653b3f
+Author: buengese <buengese@protonmail.com>
+Date:   Tue Feb 23 21:08:09 2021 +0100
+
+    fichier: implement public link
+
+commit 6df56c55b090228efb9c775e65ee6e1e574d3448
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Mar 8 11:06:11 2021 +0000
+
+    Changelog updates from Version v1.54.1
+
+commit 94e34cb783af60c89e7928e8d0ab96377f33a98b
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sun Mar 7 16:42:22 2021 +0000
+
+    build: fix nfpm install by using the released binary
+
+commit c3e2392f2bd8728091010c686d93653dc6a4ccfa
+Author: Robert Thomas <31854736+wolveix@users.noreply.github.com>
+Date:   Fri Mar 5 17:44:47 2021 +0000
+
+    dropbox: fix polling support for scoped apps - fixes #5089 (#5092)
+    
+    This fixes the polling implementation for Dropbox, particularly
+    when using a scoped app. This also adds a lower end check for the
+    timeout, as I forgot to include that in the original implementation.
+
+commit f7e3115955eeec59d0dc618c6d912371153edb09
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Mar 5 11:04:57 2021 +0000
+
+    s3: fix Wasabi HEAD requests returning stale data by using only 1 transport
+    
+    In this commit
+    
+    fc5b14b62046b240 s3: Added `--s3-disable-http2` to disable http/2
+    
+    We created our own transport so we could disable http/2. However the
+    added function is called twice meaning that we create two HTTP
+    transports. This didn't happen with the original code because the
+    default transport is cached by fshttp.
+    
+    Rclone normally does a PUT followed by a HEAD request to check an
+    upload has been successful.
+    
+    With the two transports, the PUT and the HEAD were being done on
+    different HTTP transports. This means that it wasn't re-using the same
+    HTTP connection, so the HEAD request showed the previous object value.
+    This caused rclone to declare the upload was corrupted, delete the
+    object and try again.
+    
+    This patch makes sure we only create one transport and use it for both
+    PUT and HEAD requests which fixes the problem with Wasabi.
+    
+    See: https://forum.rclone.org/t/each-time-rclone-is-run-1-3-fails-2-3-succeeds/22545
+
+commit e01e8010a0ee97c2b61b1270a6f20ed5d703fbac
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Mar 5 15:34:36 2021 +0000
+
+    Add Maxwell Calman to contributors
+
+commit 75056dc9b27a8ce6e9048e1568ae8202ca62ee6a
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Fri Mar 5 15:58:04 2021 +0300
+
+    ftp: update dependency jlaffaye/ftp (#5097)
+
+commit 7aa7acd926777ae149142f6dab9b15f4968f7071
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Thu Mar 4 14:26:48 2021 +0300
+
+    address stringent ineffectual assignment check in golangci-lint (#5093)
+
+commit 0ad38dd6fa28e841501a4c7bb3ec82c646ac1531
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Mar 1 12:05:36 2021 +0000
+
+    dropbox,ftp,onedrive,yandex: make --timeout 0 work properly
+    
+    See: https://forum.rclone.org/t/an-issue-about-ftp-backend-in-2-different-systems/22551
+
+commit 9cc8ff4dd48dedcaf4bab25b94985758d3ad9c86
+Author: Maxwell Calman <mcalman@MacBook-Pro.local>
+Date:   Fri Oct 30 15:30:04 2020 -0500
+
+    chunker: partially implement no-rename transactions (#4675)
+    
+    Some storage providers e.g. S3 don't have an efficient rename operation.
+    Before this change, when chunker finished an upload, the server-side copy
+    and delete operations that renamed temporary chunks to their final names
+    could take a significant amount of time.
+    This PR records transaction identifier (versioning) in the metadata of
+    chunker composite objects striving to remove the need for rename
+    operations on such backends.
+    This approach will be triggered be the new "transactions" configuration
+    option, which can be "rename" (the default) or "norename".
+    We implement the new approach for uploads (Put operations).
+    The chunker Move operation still uses the rename operation of
+    underlying backend. Filling this gap is left for a later PR.
+    
+    Co-authored-by: Ivan Andreev <ivandeex@gmail.com>
+
+commit b029fb591fb97957c00086a4ebe207a416d050c1
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Feb 8 13:22:12 2021 +0000
+
+    s3: fix failed to create file system with folder level permissions policy
+    
+    Before this change, if folder level access permissions policy was in
+    use, with trailing `/` marking the folders then rclone would HEAD the
+    path without a trailing `/` to work out if it was a file or a folder.
+    This returned a permission denied error, which rclone returned to the
+    user.
+    
+        Failed to create file system for "s3:bucket/path/": Forbidden: Forbidden
+            status code: 403, request id: XXXX, host id:
+    
+    Previous to this change
+    
+    53aa03cc44b2a425 s3: complete sse-c implementation
+    
+    rclone would assume any errors when HEAD-ing the object implied it
+    didn't exist and this test would not fail.
+    
+    This change reverts the functionality of the test to work as it did
+    before, meaning any errors on HEAD will make rclone assume the object
+    does not exist and the path is referring to a directory.
+    
+    Fixes #4990
+
+commit 95e9c4e7f12ea1fd0dd04157892b9e9eb3ccd4e3
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 24 20:35:19 2021 +0000
+
+    Add georne to contributors
+
+commit c40bafb72cdb0f325468a3e81261dd9722b1aa18
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 24 20:35:19 2021 +0000
+
+    Add tYYGH to contributors
+
+commit eac77b06abc2381d26ddf857a485832baf99458c
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 24 20:35:19 2021 +0000
+
+    Add Romeo Kienzler to contributors
+
+commit 0355d6daf28a96f9748894ca0ad62193b60948f3
+Author: Yaroslav Halchenko <debian@onerussian.com>
+Date:   Wed Feb 24 14:16:19 2021 -0500
+
+    CONTRIBUTING.md: recommend to push feature branch with -u + minor tuneups
+
+commit c4b8df69036117cdb8415873d0d99635390b6c13
+Author: buengese <buengese@protonmail.com>
+Date:   Mon Feb 22 00:37:38 2021 +0100
+
+    fichier: implement copy & move
+
+commit 0dd3ae5e0de671cb64011a7e45edce0b55edb912
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Wed Feb 24 19:40:54 2021 +0300
+
+    Add Robert Thomas to contributors
+
+commit e5aa92c9222d8d999c9bd0a20c2b6074aab43f5a
+Author: Robert Thomas <31854736+wolveix@users.noreply.github.com>
+Date:   Wed Feb 24 09:33:31 2021 +0000
+
+    dropbox: add polling support - fixes #2949
+    
+    This implements polling support for the Dropbox backend. The Dropbox SDK dependency had to be updated due to an auth issue, which was fixed on Jan 12 2021. A secondary internal Dropbox service was created to handle unauthorized SDK requests, as is necessary when using the ListFolderLongpoll function/endpoint. The config variable was renamed to cfg to avoid potential conflicts with the imported config package.
+
+commit f6265fbeff6b750ecbc3efe6d4b6ec840def222f
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Wed Feb 24 03:35:24 2021 +0300
+
+    Add pvalls to contributors
+
+commit 1397b852149d068ee76b7b66ae062ce226b23706
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Wed Feb 24 03:28:15 2021 +0300
+
+    Add Georg Neugschwandtner to contributors
+
+commit 86a0dae6322ad79b7c9dd82d4977ef91495b683d
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Wed Feb 24 03:27:16 2021 +0300
+
+    Add Rauno Ots to contributors
+
+commit 076ff96f6b31bfd44a2f9474d4311c19d83ce19c
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Mon Feb 22 18:29:00 2021 +0000
+
+    webdav: check that purged directory really exists (#2921)
+    
+    Sharepoint 2016 returns status 204 to the purge request
+    even if the directory to purge does not really exist.
+    This change adds an extra check to detect this condition
+    and returns a proper error code.
+
+commit 985011e73bbec3f7e8bf31a54339162d15049693
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Mon Feb 22 01:07:05 2021 +0000
+
+    webdav: fix sharepoint-ntlm error 401 for parallel actions (#2921)
+    
+    The go-ntlmssp NTLM negotiator has to try various authentication methods.
+    Intermediate responses from Sharepoint have status code 401, only the
+    final one is different. When rclone runs a large operation in parallel
+    goroutines according to --checkers or --transfers, one of threads can
+    receive intermediate 401 response targeted for another one and returns
+    the 401 authentication error to the user.
+    This patch fixes that.
+
+commit 9ca6bf59c6e27dcc05c3b0d004289c43350f2c5f
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Sun Feb 21 15:53:06 2021 +0000
+
+    webdav: enforce encoding to fix errors with sharepoint-ntlm (#2921)
+    
+    On-premises Sharepoint returns HTTP errors 400 or 500 in
+    reply to attempts to use file names with special characters
+    like hash, percent, tilde, invalid UTF-7 and so on.
+    This patch activates transparent encoding of such characters.
+
+commit e5d5ae9ab72ca41d40aa9a4dbc15722fd4101834
+Author: georne <77802995+georne@users.noreply.github.com>
+Date:   Sat Feb 6 15:50:53 2021 +0100
+
+    webdav: disable HTTP/2 for NTLM authentication (#2921)
+    
+    As per Microsoft documentation, Windows authentication
+    (NTLM/Kerberos/Negotiate) is not supported with HTTP/2.
+    This patch disables transparent HTTP/2 support when the
+    vendor setting is "sharepoint-ntlm". Otherwise connections
+    to IIS/10.0 can fail with HTTP_1_1_REQUIRED.
+    
+    Co-authored-by: Georg Neugschwandtner <georg.neugschwandtner@gmx.net>
+
+commit ac6bb222f9ee1c117102f6ed3b0b1c0ba5316ce2
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Sun Feb 21 22:47:06 2021 +0300
+
+    webdav: improve terminology in sharepoint-ntlm docs (#2921)
+    
+    The most popular keyword for the Sharepoint in-house or company
+    installations is "On-Premises".
+    "Microsoft OneDrive account" is in fact just a Microsoft account.
+    
+    Co-authored-by: Georg Neugschwandtner <georg.neugschwandtner@gmx.net>
+
+commit 62d5876eb4963cf073b6fc1943c6451e18d81e2f
+Author: Alex Chen <Cnly@users.noreply.github.com>
+Date:   Fri Jan 22 12:55:05 2021 +0800
+
+    webdav: make sharepoint-ntlm docs more consistent (#2921)
+    
+    Clarify difference between Sharepoint Online and
+    hosted Sharepoint with NTLM authentication.
+
+commit 9808a534161ad902de849cf2a716c399440c98f7
+Author: Rauno Ots <rauno.ots@cgi.com>
+Date:   Thu Jan 17 13:35:30 2019 +0100
+
+    webdav: add support for sharepoint with NTLM authentication (#2921)
+    
+    Add new option option "sharepoint-ntlm" for the vendor setting.
+    Use it when your hosted Sharepoint is not tied to the OneDrive
+    accounts and uses NTLM authentication.
+    Also add documentation and integration test.
+    
+    Fixes: #2171
+
+commit cc08f66dc178776b44faabdb90d1846a0c525fa7
+Author: pvalls <polvallsrue@gmail.com>
+Date:   Mon Feb 22 17:21:18 2021 +0100
+
+    docs: singular/plural duplicity for MByte{s}
+
+commit 6b8da24eb83ef792e52ffa2d7523b3c3b189643d
+Author: pvalls <polvallsrue@gmail.com>
+Date:   Sun Feb 21 18:19:55 2021 +0100
+
+    docs: uppercase for MBytes
+    
+    MBytes is written as Mbytes and MBytes interchangeably.
+    Use uppercase consistently across all docs.md
+
+commit 333faa6c68cd14e11cdbbe68f11a028a2179357f
+Author: buengese <buengese@protonmail.com>
+Date:   Mon Feb 22 20:54:27 2021 +0100
+
+    zoho: fix custom client id's
+
+commit 1b92e4636e789f4007adec8fec04b93766ae5671
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 23 10:34:58 2021 +0000
+
+    rc: implement passing filter config with _filter parameter
+
+commit c5a299d5b11a669f9e2d1c7dcf3796cb599fd430
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 23 10:33:03 2021 +0000
+
+    rc: fix options/local to return the filter options
+
+commit 04a8859d29f7c645bb1abe550fdabe1b59dd8d0d
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sun Feb 21 12:56:19 2021 +0000
+
+    cmount: fix mount dropping on macOS by setting --daemon-timeout 10m
+    
+    Previously rclone set --daemon-timeout to 15m by default. However
+    osxfuse seems to be ignoring that value since it is above the maximum
+    value of 10m. This is conjecture since the source of osxfuse is no
+    longer available.
+    
+    Setting the value to 10m seems to resolve the problem.
+    
+    See: https://forum.rclone.org/t/rclone-mount-frequently-drops-when-using-plex/22352
+
+commit 4b5fe3adad013b5e0bbf107e560968ea94d2772d
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 9 10:12:23 2021 +0000
+
+    delete,rmdirs: make --rmdirs obey the filters
+    
+    See: https://forum.rclone.org/t/a-problem-with-rclone-delete-from-list/22143
+
+commit 7db68b72f12bfa71bd03f399c7e9302b2fc4fec7
+Author: edwardxml <56691903+edwardxml@users.noreply.github.com>
+Date:   Thu Feb 18 11:11:56 2021 +0000
+
+    docs: directory filter rules
+
+commit 9c667be2a1a4abebce7b0faf5ca54e180120ec1f
+Author: edwardxml <56691903+edwardxml@users.noreply.github.com>
+Date:   Wed Feb 17 22:37:17 2021 +0000
+
+    docs: remove dead link from rc.md (#5038)
+
+commit c0cf54067ad9dde419ceb1329740e5ef67de4b32
+Author: tYYGH <tYYGH@users.noreply.github.com>
+Date:   Wed Feb 17 21:36:13 2021 +0100
+
+    vfs: --vfs-used-is-size to report used space using recursive scan (#4043)
+    
+    Some backends, most notably S3, do not report the amount of bytes used.
+    This patch introduces a new flag that allows instead of relying on the
+    backend, use recursive scan similar to `rclone size` to compute the total
+    used space. However, this is ineffective and should be used as a last resort.
+    
+    Co-authored-by: Yves G <theYinYeti@yalis.fr>
+
+commit 297ca23abd5c712c9d84ef6d6498918329fe3cd9
+Author: Romeo Kienzler <romeo.kienzler@gmail.com>
+Date:   Wed Feb 17 17:11:57 2021 +0100
+
+    docs: fix typo in crypt.md (#5037)
+
+commit d809930e1d75cc0c0c8fff5be6bdb42b62053a4c
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 16 16:05:27 2021 +0000
+
+    union: fix mkdir at root with remote:/
+    
+    Before the this fix if you specified remote:/ then the union backend
+    would fail to notice the root directory existed.
+    
+    This was fixed by stripping the trailing / from the root.
+    
+    See: https://forum.rclone.org/t/upgraded-from-1-45-to-1-54-now-cant-create-new-directory-within-union-mount/22284/
+
+commit fdc0528bd5f72cf14a26974b80a20479cd1a6caf
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 17 12:11:13 2021 +0000
+
+    Add Dmitry Chepurovskiy to contributors
+
+commit a0320d6e94961691d1eaf0507d17c975970edd28
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 17 12:11:13 2021 +0000
+
+    Add Vesnyx to contributors
+
+commit 89bf036e15a66bc54430f3045fd244b898b154e4
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 17 12:11:13 2021 +0000
+
+    Add K265 to contributors
+
+commit 1605f9e14dbbe58e0b05f746dd9e2dc162e26148
+Author: Dmitry Chepurovskiy <me@dm3ch.net>
+Date:   Wed Feb 17 15:04:26 2021 +0300
+
+    s3: Fix shared_credentials_file auth
+    
+    S3 backend shared_credentials_file option wasn't working neither from
+    config option nor from command line option. This was caused cause
+    shared_credentials_file_provider works as part of chain provider, but in
+    case user haven't specified access_token and access_key we had removed
+    (set nil) to credentials field, that may contain actual credentials got
+    from ChainProvider.
+    
+    AWS_SHARED_CREDENTIALS_FILE env varible as far as i understood worked,
+    cause aws_sdk code handles it as one of default auth options, when
+    there's not configured credentials.
+
+commit cd6fd4be4b74de2bcd73c182bba9a3340f621d7e
+Author: albertony <12441419+albertony@users.noreply.github.com>
+Date:   Wed Feb 17 01:44:28 2021 +0100
+
+    mount: docs: document the new FileSecurity option in WinFsp 2021 (#5002)
+
+commit 4ea7c7aa47c64a0506a61728161bb1b53d5d3c0b
+Author: Vesnyx <Vesnyx@users.noreply.github.com>
+Date:   Tue Feb 16 16:40:37 2021 -0800
+
+    crypt: add option to not encrypt data #1077 (#2981)
+    
+    Co-authored-by: Ivan Andreev <ivandeex@gmail.com>
+
+commit 58340203167f22e4b1c64961d7eca53b9694be62
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Wed Feb 17 00:38:02 2021 +0000
+
+    docker.bash: work correctly with multi-ip containers (#5028)
+    
+    Currently if container under test has multiple IP addresses,
+    the `docker_ip` function from `docker.sh` will return a gibberish.
+    This patch makes it return the first address found.
+    Additionally, I apply shellcheck on `docker.sh`.
+
+commit f5066a09cdd90bf999a85ac8974c6bc84e7a3485
+Author: Ivan Andreev <ivandeex@gmail.com>
+Date:   Wed Feb 17 00:37:30 2021 +0000
+
+    build: replace go 1.16-rc1 by 1.16.x (#5036)
+
+commit 863bd93c30f69c88e46b971da56046eceeb178fe
+Author: edwardxml <56691903+edwardxml@users.noreply.github.com>
+Date:   Tue Feb 16 22:24:11 2021 +0000
+
+    docs: fix broken link in sftp page
+    
+    Just a spare line break had crept in breaking the link form.
+
+commit d96af3b005d21a9325154c2dcf0093fddacec91f
+Author: edwardxml <56691903+edwardxml@users.noreply.github.com>
+Date:   Tue Feb 16 22:20:49 2021 +0000
+
+    docs: convert bogus example link to code
+    
+    Convert the bogus example plex url from a url that is auto created to code format that hopefully isn't.
+
+commit 3280ceee3bbc22ca2e0fc4bbfba63b73f3a3c2b2
+Author: edwardxml <56691903+edwardxml@users.noreply.github.com>
+Date:   Tue Feb 16 22:16:03 2021 +0000
+
+    docs: badly formed link
+    
+    Fix for a badly formed link created in earlier rewrite
+
+commit 930bca2478dc39f146fbc03e371f8620e5f34855
+Author: K265 <k.265@qq.com>
+Date:   Mon Nov 16 11:04:29 2020 +0800
+
+    feat: add multiple paths support to `--compare-dest` and `--copy-dest` flag
+
+commit 23b12c39bdca7c9d7581bd9d0eab2f2167d9ff99
+Author: edwardxml <56691903+edwardxml@users.noreply.github.com>
+Date:   Sun Feb 14 23:44:52 2021 +0000
+
+    Docs: Zoho WorkDrive authorisation reword
+    
+    Mainly the reference to firewalls didn't make sense. Tried to make more precise. Left z in authorize.
+
+commit 9d37c208b7ed24dcfd8519776253e5a7399ef55c
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 16 17:15:05 2021 +0000
+
+    vfs: document simultaneous usage with the same cache shouldn't be used
+    
+    Fixes #2227
+
+commit c81311722ee5e5e347c46b589c1c4061e6ddce42
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 16 11:47:41 2021 +0000
+
+    ftp: close idle connections after --ftp-idle-timeout (1m by default)
+    
+    This fixes a problem where ftp backends live on forever when using
+    the rc and use more and more connections.
+
+commit 843ddd9136e9840d178ea486c88f7ea5ea273996
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 16 11:36:32 2021 +0000
+
+    ftp: implement Shutdown method
+
+commit a3fcadddc871e646f7ce756fa5d168d4bdd6997c
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Feb 12 18:41:37 2021 +0000
+
+    sftp: close idle connections after --sftp-idle-timeout (1m by default)
+    
+    This fixes a problem where sftp backends live on forever when using
+    the rc and use more and more connections.
+    
+    Fixes #4883
+
+commit a63e1f13835ed2d82c27f5733ec9062684f838c7
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 16 12:38:50 2021 +0000
+
+    Add Miron Veryanskiy to contributors
+
+commit 5b84adf3b983f6208341ebcbbc3f8b3fbfccdb97
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Aug 10 15:11:06 2020 +0100
+
+    test: add "rclone test histogram" for file name distribution stats
+
+commit f8909650200fe9239b6ea1cb4982a674d2348c27
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sun Aug 9 10:31:04 2020 +0100
+
+    test: add makefiles test command (converted from script)
+
+commit f88a5542cf2471842e9a4165daa9d9067fe0e4e3
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Aug 8 18:02:18 2020 +0100
+
+    test: move test commands under "rclone test" and make them visible
+
+commit fd94b3a47300b9c6e1bb29b4b1d5deb72e938b79
+Author: Miron Veryanskiy <MironVeryanskiy@gmail.com>
+Date:   Fri Feb 12 18:00:43 2021 -0600
+
+    docs: replace #file-caching with #vfs-file-caching
+    
+    The documentation had dead links pointing to #file-caching. They've been
+    moved to point to #vfs-file-caching.
+
+commit 2aebeb60618f8944411baad3f91480abf1096888
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Feb 12 21:15:23 2021 +0000
+
+    accounting: fix --bwlimit when up or down is off - fixes #5019
+    
+    Before this change the core bandwidth limit was limited to upload or
+    download value if the other value was off.
+    
+    This fix only applies a core bandwidth limit when both values are set.
+
+commit e779cacc82d256830d4282f0501a4a0ea66c898f
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Feb 12 21:10:58 2021 +0000
+
+    fshttp: fix bandwidth limiting after bad merge
+    
+    Reapply missing bwlimiting which was inserted in
+    
+    0a932dc1f28fcc4d Add --bwlimit for upload and download #1873
+    
+    But accidentally removed when merging
+    
+    edfe183ba2f95120 fshttp: add DSCP support with --dscp for QoS with differentiated services
+
+commit 37e630178ef29ecef371c079bd60315c9aede951
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Thu Feb 11 16:29:52 2021 +0000
+
+    dropbox: add scopes to oauth request and optionally "members.read"
+    
+    This change adds the scopes rclone wants during the oauth request.
+    Previously rclone left these blank to get a default set.
+    
+    This allows rclone to add the "members.read" scope which is necessary
+    for "impersonate" to work, but only when it is in use as it require
+    authorisation from a Team Admin.
+    
+    See: https://forum.rclone.org/t/dropbox-no-members-read/22223/3
+
+commit 2cdc071b855555ade826d1c67fef401b617df7b5
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Feb 13 12:35:12 2021 +0000
+
+    Add Ankur Gupta to contributors
+
+commit 496e32fd8ad9233b4f1cb445a06948e09be99e81
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Feb 13 12:35:12 2021 +0000
+
+    Add cynthia kwok to contributors
+
+commit bf3ba50a0fc93397a0a81fa87db934855e0223ad
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Feb 13 12:35:12 2021 +0000
+
+    Add David Sze to contributors
+
+commit 22c226b152839dde2c5a63ae4bed13d641e107c4
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Feb 13 12:35:12 2021 +0000
+
+    Add Alexey Tabakman to contributors
+
+commit 5ca7f1fe87052ffe9f18a8b134ba190038cf51f5
+Author: Klaus Post <klauspost@gmail.com>
+Date:   Thu Feb 11 10:41:29 2021 +0100
+
+    encoder/filename: Wrap scsu package
+
+commit f14220ef1ed93f20d87e0d356cec3518c1d9e307
+Author: Klaus Post <klauspost@gmail.com>
+Date:   Mon Feb 1 15:11:13 2021 +0100
+
+    encoder/filename: Add 2 more tables and tests.
+
+commit 424aaac2e1b3f3af1c55385198cc3644a4306d34
+Author: Klaus Post <klauspost@gmail.com>
+Date:   Mon Jan 4 17:09:09 2021 +0100
+
+    encoder/filename: Add SCSU as tables
+    
+    Instead of only adding SCSU, add it as an existing table.
+    
+    Allow direct SCSU and add a, perhaps, reasonable table as well.
+    
+    Add byte interfaces that doesn't base64 encode the URL as well with `EncodeBytes` and `DecodeBytes`.
+    
+    Fuzz tested and decode tests added.
+
+commit 47b69d63009fb5808af3ebb325fb0783876beee5
+Author: Ankur Gupta <agupta@egnyte.com>
+Date:   Wed Feb 10 23:29:10 2021 +0530
+
+    operations: Made copy and sync operations obey a RetryAfterError
+
+commit c0c2505977d10ef31f8a0a49f622427a53a1f28c
+Author: cynthia kwok <cynthia.m.kwok@gmail.com>
+Date:   Thu Feb 11 09:45:44 2021 -0800
+
+    build: add an rclone user to the Docker image but don't use it by default
+    
+    partially addresses #4831
+    
+    Co-authored-by: cynful <cynful@users.noreply.github.com>
+
+commit 2d7afe8690ece6285051143ddb9092fedca692d8
+Author: David Sze <sze.david@gmail.com>
+Date:   Sun Jan 31 15:25:24 2021 -0500
+
+    local: Add flag --no-preallocate - #3207
+    
+    Some virtual filesystems (such as Google Drive File Stream) may
+    incorrectly set the actual file size equal to the preallocated space,
+    causing checksum and file size checks to fail.
+    
+    This flag can be used to disable preallocation for local backends of
+    this type.
+
+commit 92187a3b333215fd8c7035bb4bab6c8f15294866
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 10 16:49:35 2021 +0000
+
+    cmount: fix unicode issues with accented characters on macOS
+    
+    This adds
+    
+        -o modules=iconv,from_code=UTF-8,to_code=UTF-8-MAC
+    
+    To the mount options if it isn't already present which fixes mounting
+    issues on macOS with accented characters in the finder.
+
+commit 53aa4b87fd3c1ae8a96c83d0d73bb9131df1e1c1
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 9 09:58:44 2021 +0000
+
+    b2: fix failed to create file system with application key limited to a prefix
+    
+    Before this change, if an application key limited to a prefix was in
+    use, with trailing `/` marking the folders then rclone would HEAD the
+    path without a trailing `/` to work out if it was a file or a folder.
+    This returned a permission denied error, which rclone returned to the
+    user.
+    
+        Failed to create file system for "b2:bucket/path/":
+            failed to HEAD for download: Unknown 401  (401 unknown)
+    
+    This change assumes any errors on HEAD will make rclone assume the
+    object does not exist and the path is referring to a directory.
+    
+    See: https://forum.rclone.org/t/b2-error-on-application-key-limited-to-a-prefix/22159/
+
+commit edfe183ba2f95120062596c98f23fe91e615b6f7
+Author: Max Sum <max@lolyculture.com>
+Date:   Fri Jan 29 11:41:50 2021 +0800
+
+    fshttp: add DSCP support with --dscp for QoS with differentiated services
+
+commit dfc63eb8f1031a2e621f72f01c5c424ddaa75996
+Author: edwardxml <56691903+edwardxml@users.noreply.github.com>
+Date:   Wed Feb 10 18:21:41 2021 +0000
+
+    docs: update filtering docs
+    
+    Typos from prior major rewrite
+
+commit f21f2529a3c487fdbf6c9e0e8a6c7cc45eabb6b9
+Author: edwardxml <56691903+edwardxml@users.noreply.github.com>
+Date:   Wed Feb 10 18:18:01 2021 +0000
+
+    docs: fix nesting of brackets and backticks in ftp docs
+
+commit 1efb543ad886480b4c3038e33c439540fbb948bb
+Author: edwardxml <56691903+edwardxml@users.noreply.github.com>
+Date:   Wed Feb 10 18:09:48 2021 +0000
+
+    docs: add a Windows example to the filtering docs
+    
+    Add an example pinched from rclone forum
+    
+    https://forum.rclone.org/t/need-help-to-understand-filtering-commands/22196
+    
+    Credit to @asdffdsa
+
+commit 92e36fcfc539a91cd26d8649a56a42b29052723d
+Author: edwardxml <56691903+edwardxml@users.noreply.github.com>
+Date:   Wed Feb 10 18:08:25 2021 +0000
+
+    docs: update filtering time formats
+    
+    Correction per @x0b from
+    https://forum.rclone.org/t/max-age-min-age-rfc3339-format-rejected/22204
+
+commit bf8542c67004428ad25b8eab1fa7e34608ccb908
+Author: Alexey Tabakman <samosad.ru@gmail.com>
+Date:   Tue Feb 9 21:23:45 2021 +0300
+
+    docs: update information about Disk-O: desktop client #4988 (#4988)
+
+commit cc5a1e90d88d82cf0f95f68408e4d3346ee1f73b
+Author: albertony <12441419+albertony@users.noreply.github.com>
+Date:   Mon Feb 8 17:25:59 2021 +0100
+
+    mount: improved handling of relative paths on windows
+
+commit b39fa54ab22e2fa551a6693c90e2d3c90e2d6fd4
+Author: albertony <12441419+albertony@users.noreply.github.com>
+Date:   Mon Feb 8 15:50:56 2021 +0100
+
+    mount: allow mounting to root directory on windows
+
+commit f1147fe1dde4026554ddda365a7f4da46499e2ac
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Mon Feb 8 12:24:44 2021 +0000
+
+    rc: sync,copy,move: document createEmptySrcDirs parameter - fixes #4489
+
+commit 8897377a541428b4a3f3be4e61d4d97b90fbfdaa
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Oct 27 13:08:20 2020 +0000
+
+    filter: Make `--exclude "dir/"` equivalent to `--exclude "dir/**"`
+    
+    Rclone uses directory exclusions to cut down the listing it has to do,
+    so before this fix `--exclude dir/` would make sure nothing in `dir/`
+    was scanned, **except** if --fast-list was used, in which case only
+    the directory was excluded and everything within it was included.
+    
+    This is rather unexpected, so this patch makes `--exclude dir/` be
+    equivalent to `--exclude dir/**`, meaning that excluding a directory
+    excludes it and its contents.
+    
+    We can't do the same for --include without changing the semantics of
+    filtering slightly.
+    
+    Fixes #3375
+
+commit f50b4e51edb5c004213a722ab7b82c09e9a1a0e0
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Feb 5 10:20:19 2021 +0000
+
+    build: make a macOS ARM64 build to support Apple Silicon - Fixes #4786
+    
+    - add `-macos-sdk` and `-macos-arch` to adjust CGO_CFLAGS and CGO_LDFLAGS
+        - select macOS SDK 11.1 and arch arm64 when building
+    - add -cgo-cflags and -cgo-ldflags to set CGO_CFLAGS and CGO_LDFLAGS
+        - add back /usr/local to pickup fuse headers and library
+    - add `-env` to cross-compile
+    - add macOS/arm64 to download matrix
+
+commit f135acbdfbe9890f446ef029f42669a14261e7d3
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Feb 5 16:07:59 2021 +0000
+
+    build: install macfuse 4.x instead of osxfuse 3.x
+    
+    The macfuse has been renamed, but brew is still picking up the old
+    version under the old name.
+    
+    This corrects the name to macfuse which brings in v4.x which should
+    support Apple Silicon.
+
+commit cdd99a6f39475d132dd86222ec86c9c61f204657
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Feb 5 17:29:05 2021 +0000
+
+    fs/accounting: fix occasionally failing test on macOS
+
+commit 6ecb5794bc16ffdec66a3d1d9216e2f814d4f4af
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Dec 12 17:40:29 2020 +0000
+
+    rc: add _config parameter to set global config for just this rc call
+
+commit 9a21aff4ed757b1f9aaaec9a9ca208bc4caed90f
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Dec 12 16:55:57 2020 +0000
+
+    rc: add options/local to see the options configured in the context
+
+commit 8574a7bd67616514a0720796c89fa491e9c1e746
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sat Dec 12 15:35:30 2020 +0000
+
+    rc: factor async/sync job handing into rc/jobs from rc/rcserver
+    
+    This fixes async jobs with `rclone rc --loopback` which isn't very
+    important but sets the stage for _config setting.
+
+commit a0fc10e41a6b5da9279179f37bf5aec5bba6010e
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Dec 11 19:10:54 2020 +0000
+
+    rc: factor out duplicate code in job creation
+
+commit ae3963e4b44f531d3b30ba690b9d462ab372b252
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Dec 11 17:48:09 2020 +0000
+
+    fs: Add string alternatives for setting options over the rc
+    
+    Before this change options were read and set in native format. This
+    means for example nanoseconds for durations or an integer for
+    enumerated types, which isn't very convenient for humans.
+    
+    This change enables these types to be set with a string with the
+    syntax as used in the command line instead, so `"10s"` rather than
+    `10000000000` or `"DEBUG"` rather than `8` for log level.
+
+commit e32f08f37b417d64d730a87c18dc8c707353322e
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sun Feb 7 11:38:17 2021 +0000
+
+    drive: refer to Shared Drives instead of Team Drives
+
+commit fea4b753b28ff5b001881dacdb9ee123f64caa56
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sun Feb 7 12:30:12 2021 +0000
+
+    Add Alex JOST to contributors
+
+commit b2b5b7598c5bd91731233c74118a2c1ad7532e1c
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Thu Feb 4 17:34:30 2021 +0000
+
+    build: ensure go1.16 go gets the correct versions of tools
+    
+    go1.16 uses GO111MODULE=on by default which meant we were picking up
+    v1 of nfpm instead of the intended v2.
+
+commit 5f943aabc8ef356970a56cd185459c6023f2ff83
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Thu Feb 4 16:37:23 2021 +0000
+
+    build: Use GO386=softfloat instead of deprecated GO386=387 for 386 builds
+
+commit 84c785bc36ca67eef132a5b7747799bea2972923
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Thu Feb 4 09:01:36 2021 +0000
+
+    build: use go1.16-rc1 as default compiler
+
+commit 993146375ead229da8d532b84f16c467d05b325a
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 3 21:34:38 2021 +0000
+
+    build: update all dependencies
+
+commit bbe791a88631a0a68058091b1e2d640bd2c80953
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Fri Jan 22 17:23:51 2021 +0000
+
+    swift: update github.com/ncw/swift to v2.0.0
+    
+    The update to v2 of the swift library introduces a context parameter
+    to each function. This required a lot of mostly mechanical changes
+    adding context parameters.
+    
+    See: https://github.com/ncw/swift/issues/159
+    See: https://github.com/ncw/swift/issues/161
+
+commit 1545ace8f2cee32180d341628b3e25af21e858a0
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 3 17:46:08 2021 +0000
+
+    build: remove go1.13 build constraints
+
+commit bcac8fdc8377af57e2f29bc30b5626052ceb3981
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 3 17:41:27 2021 +0000
+
+    Use http.NewRequestWithContext where possible after go1.13 minimum version
+
+commit 15e1a6bee78960892de90bab0d6e441abed3be46
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 3 17:41:06 2021 +0000
+
+    build: raise minimum go version to go1.13
+
+commit 9710ded60fa29d3d12086348476fa9c09c00a638
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Sun Aug 2 11:13:29 2020 +0100
+
+    b2: automatically raise upload cutoff to avoid spurious error
+    
+    Before this change, if --b2-chunk-size was raised above 200M then this
+    error would be produced:
+    
+        b2: upload cutoff: 200M is less than chunk size 1G
+    
+    This change automatically reaises --b2-upload-cutoff to be the value
+    of --b2-chunk-size if it is below it, which stops this error being
+    generated.
+    
+    Fixes #4475
+
+commit 5f3672102cdcd906890f7eb00e7316ccb92b71f5
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 3 16:18:29 2021 +0000
+
+    s3: add --s3-no-head to reducing costs docs - Fixes #2163
+
+commit 644cc69108f71f418572287677136f4eaabf6084
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Wed Feb 3 14:44:40 2021 +0000
+
+    build: update GitHub release tool to use gh and put a link to changelog
+    
+    Fixes #4994
+
+commit 1415666074d3af72ef085596ac591a0df56c72ab
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 2 17:46:10 2021 +0000
+
+    lsjson: fix unterminated JSON in the presence of errors
+    
+    See: https://forum.rclone.org/t/rclone-lsjson-invalid-json-produced-no-at-the-end/22046
+
+commit bae550c71e80c3dc6afdf012c18c6d634ef10170
+Author: Alex JOST <25005220+dimejo@users.noreply.github.com>
+Date:   Tue Feb 2 18:26:41 2021 +0100
+
+    docs: Changelog: Correct link to digitalis.io
+
+commit beff081abb19277b71301651a7156262362ec01e
+Author: Nick Craig-Wood <nick@craig-wood.com>
+Date:   Tue Feb 2 16:30:58 2021 +0000
+
+    Start v1.55.0-DEV development
